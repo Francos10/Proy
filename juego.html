@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Snake</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="icon" type="image/gif" href="assets/images/snake.jpg" heigth="50px" width="50px"/>
+  </head>
+    <body onkeydown="control(event);">
+
+      <div id="container">
+		<div id="dashboard">
+			<h3>Ingresa la Tabla para jugar</h3>
+			<input type="number" id="multiplicando"> 
+			<br>
+			<span id="resultTabla">0</span>
+			<p>despues de ingresar un numero porfavor haga clic sobre el cuadro griz del juego</p>
+		</div>
+		</div>
+		<canvas id="canvas" width="600" height="600"></canvas>
+  </body>
+</html>
+
+
+<script>
+    var velocidad = 150;
+    var tamano = 15;
+	var numero;
+	var result;
+	var cont = 1;
+
+    class objeto {
+    	constructor(){
+    		this.tamano = tamano;
+    	}
+    	choque(obj){
+    		var difx = Math.abs(this.x - obj.x);
+    		var dify = Math.abs(this.y - obj.y);
+    		if(difx >= 0 && difx < tamano && dify >= 0 && dify < tamano){
+    			return true;
+    		} else {
+    			return false;
+    		}
+    	}
+    }
+
+    class Cola extends objeto {
+    	constructor(x,y){
+    		super();
+    		this.x = x;
+    		this.y = y;
+    		this.siguiente = null;
+    	}
+    	dibujar(ctx){
+    		if(this.siguiente != null){
+    			this.siguiente.dibujar(ctx);
+    		}
+    		ctx.fillStyle = "#FFFFFF";
+    		ctx.fillRect(this.x, this.y, this.tamano, this.tamano);
+    	}
+    	setxy(x,y){
+    		if(this.siguiente != null){
+    			this.siguiente.setxy(this.x, this.y);
+    		}
+    		this.x = x;
+    		this.y = y;
+    	}
+    	meter(){
+    		if(this.siguiente == null){
+    			this.siguiente = new Cola(this.x, this.y);
+    		} else {
+    			this.siguiente.meter();
+    		}
+    	}
+    	verSiguiente(){
+    		return this.siguiente;
+    	}
+    }
+
+    class Comida extends objeto {
+    	constructor(){
+    		super();
+    		this.x = this.generar();
+    		this.y = this.generar();
+    	}
+    	generar(){
+    		var num = (Math.floor(Math.random() * 59))*10;
+    		return num;
+    	}
+    	colocar(){
+			// Conteo para incremento
+			cont++;
+    		this.x = this.generar();
+    		this.y = this.generar();
+    	}
+
+    	dibujar(ctx){
+			numero = document.getElementById("multiplicando").value;
+			// Multiplicar incremento de snake por el numero ingresado en el input
+			result = cont * numero;
+			var span = document.getElementById("resultTabla");
+			span.textContent =  numero + " * " + cont + " = " + result;
+    		ctx.fillStyle = "#f3dc0b";
+    		ctx.fillText(result, this.x, this.y, this.tamano, this.tamano);
+    	}
+
+    }
+
+    //Objetos del juego
+    var cabeza = new Cola(20,20);
+    var comida = new Comida();
+    var ejex = true;
+    var ejey = true;
+    var xdir = 0;
+    var ydir = 0;
+
+    function movimiento(){
+    	var nx = cabeza.x+xdir;
+    	var ny = cabeza.y+ydir;
+    	cabeza.setxy(nx,ny);
+    }
+
+    function control(event){
+    	var cod = event.keyCode;
+    	if(ejex){
+    		if(cod == 38){
+    			ydir = -tamano;
+    			xdir = 0;
+    			ejex = false;
+    			ejey = true;
+    		}
+    		if(cod == 40){
+    			ydir = tamano;
+    			xdir = 0;
+    			ejex = false;
+    			ejey = true;
+    		}
+    	}
+    	if(ejey){
+    		if(cod == 37){
+    			ydir = 0;
+    			xdir = -tamano;
+    			ejey = false;
+    			ejex = true;
+    		}
+    		if(cod == 39){
+    			ydir = 0;
+    			xdir = tamano;
+    			ejey = false;
+    			ejex = true;
+    		}
+    	}
+    }
+
+    function findeJuego(){
+    	xdir = 0;
+    	ydir = 0;
+    	ejex = true;
+    	ejey = true;
+    	cabeza = new Cola(20,20);
+    	comida = new Comida();
+    	alert("Perdiste");
+    }
+
+	function finTabla(){
+		alert("Tabla Completada");
+	}
+
+    function choquepared() {
+    	if(cabeza.x < 0 || cabeza.x > 590 || cabeza.y < 0 || cabeza.y > 590){
+    		findeJuego();
+    	}
+
+	function terminar(){
+		if (cont === 3){
+			finTabla();
+		}
+	}
+
+    }
+
+    function choquecuerpo() {
+    	var temp = null;
+    	try{
+    		temp = cabeza.verSiguiente().verSiguiente();
+    	}catch(err){
+    		temp = null;
+    	}
+    	while(temp != null){
+    		if(cabeza.choque(temp)){
+    			//fin de juego
+    			findeJuego();
+    		} else {
+    			temp = temp.verSiguiente();
+    		}
+    	}
+    }
+
+    function dibujar(){
+    	var canvas = document.getElementById("canvas");
+    	var ctx = canvas.getContext("2d");
+    	ctx.clearRect(0,0, canvas.width, canvas.height);
+    	//aquí abajo va todo el dibujo
+    	cabeza.dibujar(ctx);
+    	comida.dibujar(ctx);
+    }
+
+    function main(){
+    	choquecuerpo();
+    	choquepared();
+    	dibujar();
+    	movimiento();
+    	if(cabeza.choque(comida)){
+    		comida.colocar();
+    		cabeza.meter();
+    	}
+    }
+
+    setInterval("main()", velocidad);
+</script>
